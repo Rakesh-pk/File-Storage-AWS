@@ -78,9 +78,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id);
-  const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
   const options = {
     httpOnly: true,
@@ -129,8 +127,7 @@ const loginUser = asyncHandler(async (req, res) => {
 // });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken =
-    req.cookies.refreshToken || req.body.refreshToken;
+  const incomingRefreshToken = req.body.refreshToken || req.cookies?.refreshToken ;
 
   if (!incomingRefreshToken) {
     throw new ApiError(401, "unauthorized request");
@@ -148,8 +145,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       throw new ApiError(401, "Invalid refresh token");
     }
 
-    if (incomingRefreshToken !== user?.refreshToken) {
-      throw new ApiError(401, "Refresh token is expired or used");
+    if (incomingRefreshToken !== user?.refreshToken) { 
+      return res.json(new ApiError(401, "Refresh token is expired or used"))
     }
 
     const options = {
@@ -157,17 +154,17 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       secure: true,
     };
 
-    const { accessToken, newRefreshToken } =
+    const { accessToken, refreshToken  } =
       await generateAccessAndRefereshTokens(user._id);
 
     return res
       .status(200)
       .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", newRefreshToken, options)
+      .cookie("refreshToken", refreshToken, options)
       .json(
         new ApiResponse(
           200,
-          { accessToken, refreshToken: newRefreshToken },
+          { accessToken, refreshToken },
           "Access token refreshed"
         )
       );
